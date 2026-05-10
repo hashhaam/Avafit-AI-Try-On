@@ -27,7 +27,8 @@ class _CameraScreenState extends State<CameraScreen> {
 
       if (picked != null && mounted) {
         final File imageFile = File(picked.path);
-        await Navigator.of(context, rootNavigator: true).push(
+        await Navigator.push(
+          context,
           MaterialPageRoute(
             builder: (_) => TryOnScreen(personImage: imageFile),
           ),

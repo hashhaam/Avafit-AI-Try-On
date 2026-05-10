@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../utils/colors.dart';
-
-// Screens
 import 'home/home_screen.dart';
 import 'wishlist/wishlist_screen.dart';
 import 'camera/camera_screen.dart';
@@ -16,30 +14,44 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _currentIndex = 2; // Camera selected by default
+  int _currentIndex = 2;
 
-  late final List<Widget> _screens = const [
-    HomeScreen(),
-    WishlistScreen(),
-    CameraScreen(),
-    OrdersScreen(),
-    SettingsProfileScreen(),
+  // Pages with their own navigators
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
   ];
+
+  Widget _buildScreen(int index) {
+    switch (index) {
+      case 0:
+        return const HomeScreen();
+      case 1:
+        return const WishlistScreen();
+      case 2:
+        return const CameraScreen();
+      case 3:
+        return const OrdersScreen();
+      case 4:
+        return const SettingsProfileScreen();
+      default:
+        return const HomeScreen();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: _buildScreen(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.purple,
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
