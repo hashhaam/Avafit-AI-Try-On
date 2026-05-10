@@ -1,13 +1,6 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 
-import '../../config/api_config.dart';
 import '../../utils/colors.dart';
 import '../../routes/app_routes.dart';
 import '../../data/brands.dart';
@@ -15,6 +8,7 @@ import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../common/webview_screen.dart';
 import '../search/search_screen.dart';
+import '../camera/camera_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,12 +20,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   UserModel? _currentUser;
   bool _isLoading = true;
-
-  File? _selectedImage;
-  Uint8List? _avatarBytes;
-  bool _isGeneratingAvatar = false;
-
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -58,77 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ---------------- IMAGE PICK ----------------
-  Future<void> _pickImage(ImageSource source) async {
-    final XFile? image = await _picker.pickImage(
-      source: source,
-      imageQuality: 90,
-    );
-
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-        _avatarBytes = null;
-      });
-    }
-  }
-
-  // ---------------- API CALL ----------------
-  Future<void> _generateAvatar() async {
-    if (_selectedImage == null) return;
-
-    setState(() => _isGeneratingAvatar = true);
-
-    try {
-      final uri = Uri.parse(ApiConfig.generateAvatarUrl);
-
-      final request = http.MultipartRequest('POST', uri);
-
-      request.headers['x-client'] = 'flutter-android';
-
-      final file = await http.MultipartFile.fromPath(
-        'file',
-        _selectedImage!.path,
-        filename: 'avatar.jpg',
-        contentType: MediaType('image', 'jpeg'),
-      );
-
-      request.files.add(file);
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final bytes = await response.stream.toBytes();
-        setState(() {
-          _avatarBytes = bytes;
-        });
-      } else {
-        final err = await response.stream.bytesToString();
-        _showError('Avatar generation failed: ${response.statusCode}');
-        debugPrint(err);
-      }
-    } catch (e, s) {
-      debugPrint('UPLOAD ERROR: $e');
-      debugPrintStack(stackTrace: s);
-      _showError('Server not reachable');
-    }
-
-    setState(() => _isGeneratingAvatar = false);
-  }
-
-  //-----METHOD TO SHOW ERROR MESSAGES IN SNACKBAR----------
-  void _showError(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
@@ -145,14 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildGreeting(),
               const SizedBox(height: 32),
 
-              // ================= AVATAR SECTION =================
-              const Text(
-                'AI Avatar Generator',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 16),
-
-              _buildAvatarCard(),
+              // ================= VIRTUAL TRY-ON BANNER =================
+              _buildVirtualTryOnBanner(),
 
               const SizedBox(height: 40),
 
@@ -217,69 +128,72 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAvatarCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (_avatarBytes != null)
-            Image.memory(_avatarBytes!, height: 220)
-          else if (_selectedImage != null)
-            Image.file(_selectedImage!, height: 220)
-          else
-            const Icon(Icons.person_outline, size: 120, color: Colors.grey),
-
-          const SizedBox(height: 16),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () => _pickImage(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt),
-                label: const Text("Camera"),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _pickImage(ImageSource.gallery),
-                icon: const Icon(Icons.photo),
-                label: const Text("Gallery"),
-              ),
-            ],
+  Widget _buildVirtualTryOnBanner() {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to Camera screen directly
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CameraScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7C6FCD), Color(0xFF6B8EE8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-
-          const SizedBox(height: 16),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _selectedImage == null || _isGeneratingAvatar
-                  ? null
-                  : _generateAvatar,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: AppColors.primaryGradient.colors.first,
-              ),
-              child: _isGeneratingAvatar
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Virtual Try-On ✨',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Upload your photo and try any outfit instantly with AI',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Try Now →',
+                      style: TextStyle(
+                        color: Color(0xFF7C6FCD),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
-                    )
-                  : const Text("Generate Avatar"),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            const Icon(Icons.checkroom_rounded, color: Colors.white, size: 64),
+          ],
+        ),
       ),
     );
   }
