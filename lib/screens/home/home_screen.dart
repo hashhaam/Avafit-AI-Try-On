@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../utils/colors.dart';
 import '../../routes/app_routes.dart';
 import '../../data/brands.dart';
 import '../../services/firestore_service.dart';

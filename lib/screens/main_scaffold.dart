@@ -14,7 +14,7 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _currentIndex = 2;
+  int _currentIndex = 0; // Home should be default, not Camera
 
   // Pages with their own navigators
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
@@ -28,17 +28,17 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildScreen(int index) {
     switch (index) {
       case 0:
-        return const HomeScreen();
+        return HomeScreen();
       case 1:
-        return const WishlistScreen();
+        return WishlistScreen();
       case 2:
-        return const CameraScreen();
+        return CameraScreen();
       case 3:
-        return const OrdersScreen();
+        return OrdersScreen();
       case 4:
-        return const SettingsProfileScreen();
+        return SettingsProfileScreen();
       default:
-        return const HomeScreen();
+        return HomeScreen();
     }
   }
 
