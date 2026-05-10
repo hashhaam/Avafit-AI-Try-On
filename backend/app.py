@@ -7,6 +7,7 @@ import os
 import json
 import uuid
 import shutil
+import tempfile
 from typing import Dict, Any
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from dotenv import load_dotenv
 from gradio_client import Client, handle_file
 import cloudinary
 import cloudinary.uploader
+import httpx
 
 # Load environment variables
 load_dotenv()
@@ -88,6 +90,7 @@ async def virtual_tryon(
     Accepts user photo and garment ID, returns try-on result URL
     """
     person_img_path = None
+    garment_tmp_path = None
     
     try:
         # Step 1: Load catalog and find garment
@@ -120,13 +123,29 @@ async def virtual_tryon(
         if not garment_image_path:
             raise HTTPException(status_code=400, detail="Garment image_path not specified in catalog")
         
-        # Convert to Path object and make it relative to project root
-        garment_img_path = Path(garment_image_path)
-        if not garment_img_path.is_absolute():
-            garment_img_path = BASE_DIR.parent / garment_image_path
-        
-        if not garment_img_path.exists():
-            raise HTTPException(status_code=404, detail=f"Garment image not found: {garment_image_path}")
+        # Check if it's a URL or local path
+        if garment_image_path.startswith('http://') or garment_image_path.startswith('https://'):
+            # Download from URL to temp file
+            print(f"📥 Downloading garment image from URL: {garment_image_path}")
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                img_response = await client.get(garment_image_path)
+                img_response.raise_for_status()
+                
+                # Create temp file
+                garment_tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+                garment_tmp.write(img_response.content)
+                garment_tmp.close()
+                garment_tmp_path = garment_tmp.name
+                garment_img_path = Path(garment_tmp_path)
+                print(f"✅ Downloaded garment image to: {garment_img_path}")
+        else:
+            # Local path (for development)
+            garment_img_path = Path(garment_image_path)
+            if not garment_img_path.is_absolute():
+                garment_img_path = BASE_DIR.parent / garment_image_path
+            
+            if not garment_img_path.exists():
+                raise HTTPException(status_code=404, detail=f"Garment image not found: {garment_image_path}")
         
         # Step 4: Call HuggingFace IDM-VTON using gradio_client
         print(f"🎨 Calling IDM-VTON with person: {person_img_path}, garment: {garment_img_path}")
@@ -167,6 +186,9 @@ async def virtual_tryon(
             if person_img_path and person_img_path.exists():
                 person_img_path.unlink()
                 print(f"🗑️  Cleaned up temp file: {person_img_path}")
+            if garment_tmp_path and Path(garment_tmp_path).exists():
+                os.unlink(garment_tmp_path)
+                print(f"🗑️  Cleaned up temp garment file: {garment_tmp_path}")
         except Exception as cleanup_error:
             print(f"⚠️  Cleanup warning: {cleanup_error}")
         
@@ -183,12 +205,22 @@ async def virtual_tryon(
                 person_img_path.unlink()
             except:
                 pass
+        if garment_tmp_path and Path(garment_tmp_path).exists():
+            try:
+                os.unlink(garment_tmp_path)
+            except:
+                pass
         raise
     except Exception as e:
         # Clean up on error
         if person_img_path and person_img_path.exists():
             try:
                 person_img_path.unlink()
+            except:
+                pass
+        if garment_tmp_path and Path(garment_tmp_path).exists():
+            try:
+                os.unlink(garment_tmp_path)
             except:
                 pass
         print(f"❌ Error in /tryon: {str(e)}")

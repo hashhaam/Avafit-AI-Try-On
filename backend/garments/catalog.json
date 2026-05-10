@@ -6,7 +6,7 @@
       "category": "Tops",
       "brand": "Gul Ahmed",
       "price": "PKR 2,500",
-      "image_path": "backend/garments/images/shirt_001.jpg",
+      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351665/shirt_001_gnobmm.jpg",
       "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351665/shirt_001_gnobmm.jpg"
     },
     {
@@ -15,7 +15,7 @@
       "category": "Tops",
       "brand": "Bonanza",
       "price": "PKR 1,800",
-      "image_path": "backend/garments/images/tshirt_001.jpg",
+      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351584/tshirt_001_yux600.jpg",
       "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351584/tshirt_001_yux600.jpg"
     },
     {
@@ -24,7 +24,7 @@
       "category": "Kurta",
       "brand": "Khaadi",
       "price": "PKR 3,200",
-      "image_path": "backend/garments/images/kurta_001.jpg",
+      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351679/kurta_001_ijt2mm.jpg",
       "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351679/kurta_001_ijt2mm.jpg"
     }
   ]
