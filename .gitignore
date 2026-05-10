@@ -1,0 +1,165 @@
+# ============================================
+# FLUTTER / DART - Heavy build files
+# ============================================
+
+# Build outputs (HEAVY - not needed on GitHub)
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Android build files (VERY HEAVY)
+android/.gradle/
+android/.idea/
+android/app/build/
+android/build/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/app/google-services.json
+android/.kotlin/
+
+# iOS build files (HEAVY)
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/.generated/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Web build
+web/
+
+# Windows build
+windows/flutter/
+
+# macOS build
+macos/Flutter/
+
+# Linux build
+linux/flutter/
+
+# ============================================
+# PYTHON BACKEND - Virtual env & cache
+# ============================================
+
+# Virtual environments (HEAVY - not needed)
+venv/
+env/
+ENV/
+backend/venv/
+backend/env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ============================================
+# SENSITIVE FILES - MUST NOT PUSH
+# ============================================
+
+# Environment variables (SECRETS!)
+.env
+backend/.env
+*.env.local
+*.env.production
+
+# Firebase config (SENSITIVE)
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+
+# API keys and secrets
+secrets.json
+credentials.json
+
+# ============================================
+# TEMPORARY & LOG FILES
+# ============================================
+
+# Logs
+*.log
+logs/
+backend/logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Upload folders (user generated content)
+backend/uploads/
+uploads/
+
+# ============================================
+# IDE & EDITOR FILES
+# ============================================
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Xcode
+*.xcworkspace
+*.xcuserdata
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+
+coverage/
+test_firestore_connection.dart
+
+# ============================================
+# DOCUMENTATION (optional - can keep)
+# ============================================
+
+# Uncomment if you don't want to push docs
+# *.md
+# !README.md
+
+# ============================================
+# GARMENT IMAGES (HEAVY - already on Cloudinary)
+# ============================================
+
+# Since images are on Cloudinary, no need to push
+backend/garments/images/*.jpg
+backend/garments/images/*.png
+backend/garments/images/*.jpeg
+
+# Keep the README in images folder
+!backend/garments/images/README.md
+
+# ============================================
+# GIT & VERSION CONTROL
+# ============================================
+
+.git/
+.gitattributes
+
+# ============================================
+# MISC
+# ============================================
+
+*.swp
+*.swo
+*~
+.fuse_hidden*

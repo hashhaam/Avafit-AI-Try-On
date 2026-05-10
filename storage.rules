@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read all files
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // User profile photos - users can upload their own
+    match /users/{userId}/profile.jpg {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User uploads folder - users can upload their own files
+    match /users/{userId}/{allFiles=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

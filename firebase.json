@@ -1,0 +1,27 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "avafit-mad-final-project",
+          "appId": "1:703099346694:android:8a8f8e7859ef07e9ad0887",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "avafit-mad-final-project",
+          "configurations": {
+            "android": "1:703099346694:android:8a8f8e7859ef07e9ad0887"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
