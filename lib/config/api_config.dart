@@ -1,12 +1,9 @@
 class ApiConfig {
   /// Base URL for the backend API
   ///
-  /// Development: Use your Mac's local IP address
-  /// Example: 'http://192.168.1.100:8000'
-  ///
-  /// Production: Use your deployed backend URL
-  /// Example: 'https://api.avafit.com'
-  static const String baseUrl = 'http://192.168.10.19:8000';
+  /// Production: Railway deployment URL
+  static const String baseUrl =
+      'https://avafit-ai-try-on-production.up.railway.app';
 
   // Endpoint paths
   static const String generateAvatarPath = '/generate-avatar';
