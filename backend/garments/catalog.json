@@ -1,31 +1,172 @@
 {
-  "garments": [
+  "brands": [
     {
-      "id": "shirt_001",
-      "name": "White Casual Shirt",
-      "category": "Tops",
-      "brand": "Gul Ahmed",
-      "price": "PKR 2,500",
-      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351665/shirt_001_gnobmm.jpg",
-      "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351665/shirt_001_gnobmm.jpg"
+      "id": "breakout",
+      "name": "Breakout",
+      "tagline": "Modern Pakistani Menswear",
+      "garments": [
+        {
+          "id": "breakout_shirt_001",
+          "name": "Casual Brown Polo",
+          "category": "Shirts",
+          "price": "PKR 2,490",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048118/breakout_shirt_002_bfsdqw.png"
+        },
+        {
+          "id": "breakout_shirt_002",
+          "name": "Beige Crew Neck Tee",
+          "category": "Shirts",
+          "price": "PKR 1,890",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048121/breakout_shirt_003_lfy4cv.png"
+        },
+        {
+          "id": "breakout_shirt_003",
+          "name": "Black Essential Tee",
+          "category": "Shirts",
+          "price": "PKR 1,990",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048122/breakout_shirt_004_avmnn6.png"
+        },
+        {
+          "id": "breakout_shirt_004",
+          "name": "Premium Cotton Shirt",
+          "category": "Shirts",
+          "price": "PKR 2,690",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048124/breakout_shirt_005_rl7o3b.png"
+        },
+        {
+          "id": "breakout_pant_001",
+          "name": "Cargo Black Pants",
+          "category": "Bottoms",
+          "price": "PKR 3,890",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048119/breakout_pent_001_w9owsg.png"
+        }
+      ]
     },
     {
-      "id": "tshirt_001",
-      "name": "Black T-Shirt",
-      "category": "Tops",
-      "brand": "Bonanza",
-      "price": "PKR 1,800",
-      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351584/tshirt_001_yux600.jpg",
-      "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351584/tshirt_001_yux600.jpg"
+      "id": "engine",
+      "name": "Engine",
+      "tagline": "Contemporary Streetwear",
+      "garments": [
+        {
+          "id": "engine_shirt_001",
+          "name": "Classic Cotton Shirt",
+          "category": "Shirts",
+          "price": "PKR 2,290",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048092/engine_shirt_001_wtmanv.jpg"
+        },
+        {
+          "id": "engine_hoodie_001",
+          "name": "Premium Pullover Hoodie",
+          "category": "Hoodies",
+          "price": "PKR 3,990",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048092/engine_hoodie_002_xjiz03.png"
+        },
+        {
+          "id": "engine_hoodie_002",
+          "name": "Urban Street Hoodie",
+          "category": "Hoodies",
+          "price": "PKR 4,290",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048094/engine_hoodie_003_inxkeb.png"
+        },
+        {
+          "id": "engine_suit_001",
+          "name": "Formal Two-Piece Suit",
+          "category": "Suits",
+          "price": "PKR 8,490",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048095/engine_suit_004_wu3u9b.png"
+        },
+        {
+          "id": "engine_suit_002",
+          "name": "Classic Business Suit",
+          "category": "Suits",
+          "price": "PKR 8,990",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048095/engine_suit_005_mdmdkg.png"
+        }
+      ]
     },
     {
-      "id": "kurta_001",
-      "name": "Blue Kurta",
-      "category": "Kurta",
-      "brand": "Khaadi",
-      "price": "PKR 3,200",
-      "image_path": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351679/kurta_001_ijt2mm.jpg",
-      "thumbnail_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1778351679/kurta_001_ijt2mm.jpg"
+      "id": "sapphire",
+      "name": "Sapphire",
+      "tagline": "Heritage Reimagined",
+      "garments": [
+        {
+          "id": "sapphire_kurta_001",
+          "name": "Classic White Kurta",
+          "category": "Kurta",
+          "price": "PKR 3,290",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047855/sapphire_kurta_001_q0snzg.png"
+        },
+        {
+          "id": "sapphire_kurta_002",
+          "name": "Festive Embroidered Kurta",
+          "category": "Kurta",
+          "price": "PKR 4,890",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047853/sapphire_kurta_002_qrauln.png"
+        },
+        {
+          "id": "sapphire_kurta_003",
+          "name": "Premium Cotton Kurta",
+          "category": "Kurta",
+          "price": "PKR 3,690",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047854/sapphire_kurta_003_hhoznn.png"
+        },
+        {
+          "id": "sapphire_kurta_004",
+          "name": "Royal Blue Kurta",
+          "category": "Kurta",
+          "price": "PKR 4,290",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047855/sapphire_kurta_004_kbente.png"
+        },
+        {
+          "id": "sapphire_kurta_005",
+          "name": "Designer Eid Kurta",
+          "category": "Kurta",
+          "price": "PKR 5,490",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047858/sapphire_kurta_005_rlsmgy.png"
+        }
+      ]
+    },
+    {
+      "id": "khaadi",
+      "name": "Khaadi",
+      "tagline": "Handcrafted Heritage",
+      "garments": [
+        {
+          "id": "khaadi_kurta_001",
+          "name": "Traditional White Kurta",
+          "category": "Kurta",
+          "price": "PKR 3,490",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047838/khaadi_kurta_001_jfzwp8.png"
+        },
+        {
+          "id": "khaadi_shirt_001",
+          "name": "Embroidered Casual Shirt",
+          "category": "Shirts",
+          "price": "PKR 2,890",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047837/khaadi_shirt_002_eorljv.png"
+        },
+        {
+          "id": "khaadi_shirt_002",
+          "name": "Textured Cotton Shirt",
+          "category": "Shirts",
+          "price": "PKR 3,190",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047840/khaadi_shirt_003_gn8lrt.png"
+        },
+        {
+          "id": "khaadi_kurta_002",
+          "name": "Hand-Woven Premium Kurta",
+          "category": "Kurta",
+          "price": "PKR 4,690",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047838/khaadi_kurta_004_x4q0sm.png"
+        },
+        {
+          "id": "khaadi_kurta_003",
+          "name": "Festive Hand-Embroidered Kurta",
+          "category": "Kurta",
+          "price": "PKR 5,290",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047844/khaadi_kurta_005_wbiwz6.png"
+        }
+      ]
     }
   ]
 }

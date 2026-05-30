@@ -1,10 +1,7 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import '../../utils/colors.dart';
-import '../../config/api_config.dart';
 import '../../services/tryon_service.dart';
 import 'tryon_result_screen.dart';
 
@@ -35,43 +32,18 @@ class _TryOnScreenState extends State<TryOnScreen> {
     });
 
     try {
-      // ISSUE 2 FIX: Add detailed error logging
+      // Use getAllGarmentsFlat to get all garments across brands
       print('🔄 Loading garments...');
-      print('📍 URL being called: ${ApiConfig.garmentsUrl}');
 
-      final response = await http
-          .get(Uri.parse(ApiConfig.garmentsUrl))
-          .timeout(const Duration(seconds: 30));
+      final garments = await TryOnService.getAllGarmentsFlat();
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['garments'] != null) {
-          final garmentsList = data['garments'] as List;
-          print('✅ Loaded ${garmentsList.length} garments');
-          setState(() {
-            _garments = garmentsList
-                .map((item) => item as Map<String, dynamic>)
-                .toList();
-            _isLoadingGarments = false;
-          });
-        } else {
-          print('⚠️ No "garments" key in response');
-          setState(() {
-            _garments = [];
-            _isLoadingGarments = false;
-          });
-        }
-      } else {
-        print('❌ HTTP error: ${response.statusCode}');
-        throw Exception('Failed to load garments: ${response.statusCode}');
-      }
+      print('✅ Loaded ${garments.length} garments');
+      setState(() {
+        _garments = garments;
+        _isLoadingGarments = false;
+      });
     } catch (e) {
-      // ISSUE 2 FIX: Detailed error logging
       print('❌ Garments error: $e');
-      print('📍 URL being called: ${ApiConfig.garmentsUrl}');
 
       setState(() {
         _isLoadingGarments = false;
@@ -283,7 +255,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
                           top: Radius.circular(8),
                         ),
                         child: Image.network(
-                          garment['thumbnail_url'] ?? '',
+                          garment['image_url'] ?? '',
                           height: 120,
                           width: double.infinity,
                           fit: BoxFit.cover,
@@ -328,7 +300,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              garment['brand'] ?? '',
+                              garment['brand_name'] ?? '',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],

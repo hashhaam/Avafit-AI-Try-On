@@ -8,6 +8,7 @@ import json
 import uuid
 import shutil
 import tempfile
+import asyncio
 from typing import Dict, Any
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from dotenv import load_dotenv
-from gradio_client import Client, handle_file
+import replicate
 import cloudinary
 import cloudinary.uploader
 import httpx
@@ -60,11 +61,23 @@ async def health_check() -> Dict[str, str]:
     return {"status": "ok", "app": "AvaFit"}
 
 
+def find_garment_by_id(catalog: Dict[str, Any], garment_id: str):
+    """
+    Helper function to find a garment by ID across all brands
+    Returns (garment, brand) tuple or (None, None) if not found
+    """
+    for brand in catalog.get("brands", []):
+        for garment in brand.get("garments", []):
+            if garment["id"] == garment_id:
+                return garment, brand
+    return None, None
+
+
 @app.get("/garments")
 async def get_garments() -> Dict[str, Any]:
     """
     Get list of available garments from catalog
-    Returns the garments catalog from catalog.json
+    Returns the brand-organized catalog from catalog.json
     """
     try:
         if not CATALOG_PATH.exists():
@@ -73,7 +86,35 @@ async def get_garments() -> Dict[str, Any]:
         with open(CATALOG_PATH, "r") as f:
             catalog = json.load(f)
         
-        return catalog
+        # Return brands array directly
+        return {"brands": catalog.get("brands", [])}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid catalog format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading catalog: {str(e)}")
+
+
+@app.get("/brands/{brand_id}")
+async def get_brand(brand_id: str) -> Dict[str, Any]:
+    """
+    Get a specific brand with all its garments
+    Returns 404 if brand_id not found
+    """
+    try:
+        if not CATALOG_PATH.exists():
+            raise HTTPException(status_code=404, detail="Catalog file not found")
+        
+        with open(CATALOG_PATH, "r") as f:
+            catalog = json.load(f)
+        
+        # Find brand by ID
+        for brand in catalog.get("brands", []):
+            if brand.get("id") == brand_id:
+                return brand
+        
+        raise HTTPException(status_code=404, detail=f"Brand '{brand_id}' not found")
+    except HTTPException:
+        raise
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Invalid catalog format")
     except Exception as e:
@@ -100,13 +141,8 @@ async def virtual_tryon(
         with open(CATALOG_PATH, "r") as f:
             catalog = json.load(f)
         
-        # Find garment by ID
-        garment = None
-        if "garments" in catalog:
-            for g in catalog["garments"]:
-                if g.get("id") == garment_id:
-                    garment = g
-                    break
+        # Find garment by ID across all brands
+        garment, brand = find_garment_by_id(catalog, garment_id)
         
         if not garment:
             raise HTTPException(status_code=404, detail="Garment not found")
@@ -118,17 +154,17 @@ async def virtual_tryon(
         with open(person_img_path, "wb") as buffer:
             shutil.copyfileobj(person_image.file, buffer)
         
-        # Step 3: Get garment image path
-        garment_image_path = garment.get("image_path")
-        if not garment_image_path:
-            raise HTTPException(status_code=400, detail="Garment image_path not specified in catalog")
+        # Step 3: Get garment image URL
+        garment_image_url = garment.get("image_url")
+        if not garment_image_url:
+            raise HTTPException(status_code=400, detail="Garment image_url not specified in catalog")
         
         # Check if it's a URL or local path
-        if garment_image_path.startswith('http://') or garment_image_path.startswith('https://'):
+        if garment_image_url.startswith('http://') or garment_image_url.startswith('https://'):
             # Download from URL to temp file
-            print(f"📥 Downloading garment image from URL: {garment_image_path}")
+            print(f"📥 Downloading garment image from URL: {garment_image_url}")
             async with httpx.AsyncClient(timeout=30.0) as client:
-                img_response = await client.get(garment_image_path)
+                img_response = await client.get(garment_image_url)
                 img_response.raise_for_status()
                 
                 # Create temp file
@@ -140,40 +176,53 @@ async def virtual_tryon(
                 print(f"✅ Downloaded garment image to: {garment_img_path}")
         else:
             # Local path (for development)
-            garment_img_path = Path(garment_image_path)
+            garment_img_path = Path(garment_image_url)
             if not garment_img_path.is_absolute():
-                garment_img_path = BASE_DIR.parent / garment_image_path
+                garment_img_path = BASE_DIR.parent / garment_image_url
             
             if not garment_img_path.exists():
-                raise HTTPException(status_code=404, detail=f"Garment image not found: {garment_image_path}")
+                raise HTTPException(status_code=404, detail=f"Garment image not found: {garment_image_url}")
         
-        # Step 4: Call HuggingFace IDM-VTON using gradio_client
-        print(f"🎨 Calling IDM-VTON with person: {person_img_path}, garment: {garment_img_path}")
+        # Step 4: Call Replicate IDM-VTON
+        print(f"🎨 Calling Replicate IDM-VTON with person: {person_img_path}, garment: {garment_img_path}")
         
-        client = Client("yisol/IDM-VTON")
-        result = client.predict(
-            dict({
-                "background": handle_file(str(person_img_path)),
-                "layers": [],
-                "composite": None
-            }),
-            handle_file(str(garment_img_path)),
-            "shirt",
-            True,
-            False,
-            30,
-            42,
-            api_name="/tryon"
+        # Initialize Replicate client (token from env)
+        output = await asyncio.to_thread(
+            replicate.run,
+            "cuuupid/idm-vton:906425dbca90663ff5427624839572cc56ea7d380343d13e2a4c4b09d3f0c30f",
+            input={
+                "human_img": open(str(person_img_path), "rb"),
+                "garm_img": open(str(garment_img_path), "rb"),
+                "garment_des": "clothing item",
+                "is_checked": True,
+                "is_checked_crop": False,
+                "denoise_steps": 30,
+                "seed": 42
+            }
         )
         
-        # Get output path from result
-        output_path = result[0]
-        print(f"✅ IDM-VTON output: {output_path}")
+        # Replicate returns FileOutput object or URL string
+        if hasattr(output, 'url'):
+            result_url = output.url
+        elif isinstance(output, list) and len(output) > 0:
+            first = output[0]
+            result_url = first.url if hasattr(first, 'url') else str(first)
+        else:
+            result_url = str(output)
         
-        # Step 5: Upload result to Cloudinary
+        print(f"✅ IDM-VTON result URL: {result_url}")
+        
+        # Step 5: Download result image from Replicate URL
+        print(f"📥 Downloading result from Replicate...")
+        async with httpx.AsyncClient() as client:
+            result_response = await client.get(result_url, timeout=60.0)
+            result_response.raise_for_status()
+            result_bytes = result_response.content
+        
+        # Step 6: Upload result to Cloudinary
         print(f"☁️  Uploading result to Cloudinary...")
         upload_result = cloudinary.uploader.upload(
-            output_path,
+            result_bytes,
             folder="avafit/results",
             public_id=f"tryon_{uuid.uuid4()}"
         )
@@ -181,7 +230,7 @@ async def virtual_tryon(
         cloudinary_url = upload_result.get("secure_url")
         print(f"✅ Result uploaded: {cloudinary_url}")
         
-        # Step 6: Clean up temp files
+        # Step 7: Clean up temp files
         try:
             if person_img_path and person_img_path.exists():
                 person_img_path.unlink()
@@ -192,7 +241,7 @@ async def virtual_tryon(
         except Exception as cleanup_error:
             print(f"⚠️  Cleanup warning: {cleanup_error}")
         
-        # Step 7: Return success response
+        # Step 8: Return success response
         return {
             "status": "success",
             "result_url": cloudinary_url

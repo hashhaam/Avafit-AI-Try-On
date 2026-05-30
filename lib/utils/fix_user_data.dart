@@ -1,5 +1,6 @@
 /// Utility to fix missing Firestore user documents
 /// Run this once if user data is not loading
+library;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';

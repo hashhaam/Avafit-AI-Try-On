@@ -89,9 +89,9 @@ class TryOnService {
     }
   }
 
-  /// Get list of available garments
+  /// Get list of available garments organized by brands
   ///
-  /// Returns list of garment maps with id, name, category, brand, price, thumbnail_url
+  /// Returns list of brand maps with id, name, tagline, and garments array
   static Future<List<Map<String, dynamic>>> getGarments() async {
     try {
       print('📦 Fetching garments from backend...');
@@ -105,16 +105,16 @@ class TryOnService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        if (data['garments'] != null) {
-          final garmentsList = data['garments'] as List;
-          final garments = garmentsList
+        if (data['brands'] != null) {
+          final brandsList = data['brands'] as List;
+          final brands = brandsList
               .map((item) => item as Map<String, dynamic>)
               .toList();
 
-          print('✅ Loaded ${garments.length} garments');
-          return garments;
+          print('✅ Loaded ${brands.length} brands');
+          return brands;
         } else {
-          print('⚠️  No garments found in response');
+          print('⚠️  No brands found in response');
           return [];
         }
       } else {
@@ -126,6 +126,37 @@ class TryOnService {
       throw Exception('Request timed out. Please check your connection.');
     } catch (e) {
       print('❌ Error in getGarments: $e');
+      rethrow;
+    }
+  }
+
+  /// Get flat list of all garments across all brands
+  ///
+  /// Returns list of garment maps for try-on screen garment selector
+  static Future<List<Map<String, dynamic>>> getAllGarmentsFlat() async {
+    try {
+      print('📦 Fetching all garments (flat)...');
+
+      final brands = await getGarments();
+      final List<Map<String, dynamic>> allGarments = [];
+
+      for (var brand in brands) {
+        final garments = brand['garments'] as List?;
+        if (garments != null) {
+          for (var garment in garments) {
+            // Add brand info to each garment
+            final garmentWithBrand = Map<String, dynamic>.from(garment);
+            garmentWithBrand['brand_name'] = brand['name'];
+            garmentWithBrand['brand_id'] = brand['id'];
+            allGarments.add(garmentWithBrand);
+          }
+        }
+      }
+
+      print('✅ Loaded ${allGarments.length} total garments');
+      return allGarments;
+    } catch (e) {
+      print('❌ Error in getAllGarmentsFlat: $e');
       rethrow;
     }
   }
