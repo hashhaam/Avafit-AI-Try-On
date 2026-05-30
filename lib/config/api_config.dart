@@ -2,7 +2,7 @@ class ApiConfig {
   /// Base URL for the backend API
   ///
   /// Production: Railway deployment URL
-  static const String baseUrl = 'http://192.168.1.4:8000';
+  static const String baseUrl = 'https://avafit-ai-try-on.onrender.com';
 
   // Endpoint paths
   static const String generateAvatarPath = '/generate-avatar';

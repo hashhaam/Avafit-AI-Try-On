@@ -16,7 +16,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from dotenv import load_dotenv
-import replicate
+from gradio_client import Client, handle_file
 import cloudinary
 import cloudinary.uploader
 import httpx
@@ -183,43 +183,39 @@ async def virtual_tryon(
             if not garment_img_path.exists():
                 raise HTTPException(status_code=404, detail=f"Garment image not found: {garment_image_url}")
         
-        # Step 4: Call Replicate IDM-VTON
-        print(f"🎨 Calling Replicate IDM-VTON with person: {person_img_path}, garment: {garment_img_path}")
+        # Step 4: Call HuggingFace IDM-VTON
+        print(f"🎨 Calling HuggingFace IDM-VTON with person: {person_img_path}, garment: {garment_img_path}")
         
-        # Initialize Replicate client (token from env)
-        output = await asyncio.to_thread(
-            replicate.run,
-            "cuuupid/idm-vton:906425dbca90663ff5427624839572cc56ea7d380343d13e2a4c4b09d3f0c30f",
-            input={
-                "human_img": open(str(person_img_path), "rb"),
-                "garm_img": open(str(garment_img_path), "rb"),
-                "garment_des": "clothing item",
-                "is_checked": True,
-                "is_checked_crop": False,
-                "denoise_steps": 30,
-                "seed": 42
-            }
+        client = Client("yisol/IDM-VTON")
+        result = await asyncio.to_thread(
+            client.predict,
+            dict(
+                background=handle_file(str(person_img_path)),
+                layers=[],
+                composite=None
+            ),
+            handle_file(str(garment_img_path)),
+            "clothing item",  # garment_des
+            True,   # is_checked (auto mask)
+            False,  # is_checked_crop
+            30,     # denoise_steps
+            42,     # seed
+            api_name="/tryon"
         )
         
-        # Replicate returns FileOutput object or URL string
-        if hasattr(output, 'url'):
-            result_url = output.url
-        elif isinstance(output, list) and len(output) > 0:
-            first = output[0]
-            result_url = first.url if hasattr(first, 'url') else str(first)
+        # gradio_client returns tuple (output_image_path, masked_image_path)
+        if isinstance(result, tuple) and len(result) > 0:
+            result_image_path = result[0]
         else:
-            result_url = str(output)
+            result_image_path = result
         
-        print(f"✅ IDM-VTON result URL: {result_url}")
+        print(f"✅ IDM-VTON result: {result_image_path}")
         
-        # Step 5: Download result image from Replicate URL
-        print(f"📥 Downloading result from Replicate...")
-        async with httpx.AsyncClient() as client:
-            result_response = await client.get(result_url, timeout=60.0)
-            result_response.raise_for_status()
-            result_bytes = result_response.content
+        # Read result image bytes
+        with open(result_image_path, 'rb') as f:
+            result_bytes = f.read()
         
-        # Step 6: Upload result to Cloudinary
+        # Step 5: Upload result to Cloudinary
         print(f"☁️  Uploading result to Cloudinary...")
         upload_result = cloudinary.uploader.upload(
             result_bytes,
@@ -230,7 +226,7 @@ async def virtual_tryon(
         cloudinary_url = upload_result.get("secure_url")
         print(f"✅ Result uploaded: {cloudinary_url}")
         
-        # Step 7: Clean up temp files
+        # Step 6: Clean up temp files
         try:
             if person_img_path and person_img_path.exists():
                 person_img_path.unlink()
@@ -241,7 +237,7 @@ async def virtual_tryon(
         except Exception as cleanup_error:
             print(f"⚠️  Cleanup warning: {cleanup_error}")
         
-        # Step 8: Return success response
+        # Step 7: Return success response
         return {
             "status": "success",
             "result_url": cloudinary_url
