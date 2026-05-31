@@ -147,4 +147,51 @@ class FirestoreService {
       throw Exception('Failed to load wishlist: $e');
     }
   }
+
+  // ==================== MY LOOKS ====================
+
+  static CollectionReference<Map<String, dynamic>> _myLooksRef(String uid) {
+    return _firestore
+        .collection(_usersCollection)
+        .doc(uid)
+        .collection('myLooks');
+  }
+
+  /// Save a try-on result to My Looks
+  static Future<void> saveLook(String uid, Map<String, dynamic> look) async {
+    try {
+      final lookId = 'look_${DateTime.now().millisecondsSinceEpoch}';
+      final data = Map<String, dynamic>.from(look);
+      data['id'] = lookId;
+      data['savedAt'] = DateTime.now().toIso8601String();
+      await _myLooksRef(uid).doc(lookId).set(data);
+    } catch (e) {
+      throw Exception('Failed to save look: $e');
+    }
+  }
+
+  /// Remove a look from My Looks
+  static Future<void> removeLook(String uid, String lookId) async {
+    try {
+      await _myLooksRef(uid).doc(lookId).delete();
+    } catch (e) {
+      throw Exception('Failed to remove look: $e');
+    }
+  }
+
+  /// Get all saved looks (most recent first)
+  static Future<List<Map<String, dynamic>>> getMyLooks(String uid) async {
+    try {
+      final snapshot = await _myLooksRef(uid).get();
+      final items = snapshot.docs.map((d) => d.data()).toList();
+      items.sort((a, b) {
+        final aDate = a['savedAt']?.toString() ?? '';
+        final bDate = b['savedAt']?.toString() ?? '';
+        return bDate.compareTo(aDate);
+      });
+      return items;
+    } catch (e) {
+      throw Exception('Failed to load looks: $e');
+    }
+  }
 }

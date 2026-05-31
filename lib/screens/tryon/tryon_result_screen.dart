@@ -4,13 +4,16 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
 
 import '../../utils/colors.dart';
 
 class TryOnResultScreen extends StatefulWidget {
   final String resultUrl;
+  final Map<String, dynamic>? garment;
 
-  const TryOnResultScreen({super.key, required this.resultUrl});
+  const TryOnResultScreen({super.key, required this.resultUrl, this.garment});
 
   @override
   State<TryOnResultScreen> createState() => _TryOnResultScreenState();
@@ -19,6 +22,8 @@ class TryOnResultScreen extends StatefulWidget {
 class _TryOnResultScreenState extends State<TryOnResultScreen> {
   bool _isSaving = false;
   bool _isSharing = false;
+  bool _isSavingLook = false;
+  bool _lookSaved = false;
 
   Future<void> _saveToGallery() async {
     setState(() {
@@ -109,6 +114,47 @@ class _TryOnResultScreenState extends State<TryOnResultScreen> {
     }
   }
 
+  Future<void> _saveToMyLooks() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to save looks')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingLook = true);
+    try {
+      final look = <String, dynamic>{
+        'result_url': widget.resultUrl,
+        'garment_name': widget.garment?['name']?.toString() ?? '',
+        'brand_name': widget.garment?['brand_name']?.toString() ?? '',
+        'garment_image': widget.garment?['image_url']?.toString() ?? '',
+      };
+      await FirestoreService.saveLook(uid, look);
+      if (!mounted) return;
+      setState(() {
+        _isSavingLook = false;
+        _lookSaved = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Saved to My Looks!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSavingLook = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save look. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -189,13 +235,16 @@ class _TryOnResultScreenState extends State<TryOnResultScreen> {
               ],
             ),
             child: SafeArea(
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Save Button
-                  Expanded(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _saveToGallery,
-                      icon: _isSaving
+                      onPressed: (_isSavingLook || _lookSaved)
+                          ? null
+                          : _saveToMyLooks,
+                      icon: _isSavingLook
                           ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -206,11 +255,19 @@ class _TryOnResultScreenState extends State<TryOnResultScreen> {
                                 ),
                               ),
                             )
-                          : const Icon(Icons.download),
-                      label: const Text('Save to Gallery'),
+                          : Icon(
+                              _lookSaved
+                                  ? Icons.check_circle
+                                  : Icons.bookmark_add,
+                            ),
+                      label: Text(
+                        _lookSaved ? 'Saved to My Looks' : 'Save to My Looks',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.purple,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.green,
+                        disabledForegroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -218,33 +275,65 @@ class _TryOnResultScreenState extends State<TryOnResultScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Share Button
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isSharing ? null : _shareImage,
-                      icon: _isSharing
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Icon(Icons.share),
-                      label: const Text('Share'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // Save Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isSaving ? null : _saveToGallery,
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.download),
+                          label: const Text('Save to Gallery'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.purple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      // Share Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isSharing ? null : _shareImage,
+                          icon: _isSharing
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.share),
+                          label: const Text('Share'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

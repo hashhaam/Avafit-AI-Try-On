@@ -80,11 +80,22 @@ class _TryOnScreenState extends State<TryOnScreen> {
       });
 
       if (resultUrl != null && mounted) {
+        // Find the selected garment's full data to pass along
+        Map<String, dynamic>? selectedGarment;
+        for (final g in _garments) {
+          if (g['id'] == _selectedGarmentId) {
+            selectedGarment = g;
+            break;
+          }
+        }
         // Navigate to result screen
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TryOnResultScreen(resultUrl: resultUrl),
+            builder: (_) => TryOnResultScreen(
+              resultUrl: resultUrl,
+              garment: selectedGarment,
+            ),
           ),
         );
       }

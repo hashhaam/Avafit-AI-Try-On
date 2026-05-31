@@ -69,9 +69,9 @@ class _MainScaffoldState extends State<MainScaffold> {
             label: 'Camera',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Orders',
+            icon: Icon(Icons.style_outlined),
+            activeIcon: Icon(Icons.style),
+            label: 'My Looks',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
