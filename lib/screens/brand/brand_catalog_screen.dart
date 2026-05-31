@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/tryon_service.dart';
+import '../../services/firestore_service.dart';
 import '../camera/camera_screen.dart';
 
 class BrandCatalogScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
   List<Map<String, dynamic>> _filtered = [];
   List<String> _categories = ['All'];
   String _selectedCategory = 'All';
+  final Set<String> _wishlistIds = {};
 
   @override
   void initState() {
@@ -65,6 +68,27 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
         _filtered = List.from(_garments);
         _isLoading = false;
       });
+
+      // Load existing wishlist state (non-fatal: ignore failures)
+      try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          final wishlist = await FirestoreService.getWishlist(uid);
+          final ids = wishlist
+              .map((g) => g['id']?.toString())
+              .whereType<String>()
+              .toSet();
+          if (mounted) {
+            setState(() {
+              _wishlistIds
+                ..clear()
+                ..addAll(ids);
+            });
+          }
+        }
+      } catch (e) {
+        print('⚠️  Could not load wishlist state (non-fatal): $e');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -96,13 +120,51 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
     );
   }
 
-  void _onFavorite(Map<String, dynamic> garment) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Wishlist coming soon'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+  Future<void> _onFavorite(Map<String, dynamic> garment) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to use wishlist')),
+      );
+      return;
+    }
+    final id = garment['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+
+    final wasInWishlist = _wishlistIds.contains(id);
+    // Optimistic UI update
+    setState(() {
+      if (wasInWishlist) {
+        _wishlistIds.remove(id);
+      } else {
+        _wishlistIds.add(id);
+      }
+    });
+
+    try {
+      if (wasInWishlist) {
+        await FirestoreService.removeFromWishlist(uid, id);
+      } else {
+        // Attach brand info so Wishlist screen can display it
+        final data = Map<String, dynamic>.from(garment);
+        data['brand_id'] = widget.brandId;
+        data['brand_name'] = widget.brandName;
+        await FirestoreService.addToWishlist(uid, data);
+      }
+    } catch (e) {
+      // Revert on failure
+      if (!mounted) return;
+      setState(() {
+        if (wasInWishlist) {
+          _wishlistIds.add(id);
+        } else {
+          _wishlistIds.remove(id);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update wishlist')),
+      );
+    }
   }
 
   @override
@@ -286,8 +348,10 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.favorite_border,
+                      child: Icon(
+                        _wishlistIds.contains(garment['id']?.toString())
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         size: 18,
                         color: _purple,
                       ),

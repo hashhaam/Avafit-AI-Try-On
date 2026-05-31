@@ -1,23 +1,91 @@
 import 'package:flutter/material.dart';
-import '../../utils/colors.dart';
-import 'recently_viewed_screen.dart';
-import 'dart:math' as math;
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
+import '../camera/camera_screen.dart';
 
-class WishlistScreen extends StatelessWidget {
+class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
+
+  @override
+  State<WishlistScreen> createState() => _WishlistScreenState();
+}
+
+class _WishlistScreenState extends State<WishlistScreen> {
+  static const Color _purple = Color(0xFF7C6FCD);
+
+  bool _isLoading = true;
+  String? _error;
+  List<Map<String, dynamic>> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWishlist();
+  }
+
+  Future<void> _loadWishlist() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        setState(() {
+          _error = 'Please sign in to view your wishlist.';
+          _isLoading = false;
+        });
+        return;
+      }
+      final items = await FirestoreService.getWishlist(uid);
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not load wishlist. Please try again.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _removeItem(String garmentId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await FirestoreService.removeFromWishlist(uid, garmentId);
+      setState(() {
+        _items.removeWhere((g) => g['id']?.toString() == garmentId);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not remove item')));
+    }
+  }
+
+  void _onTryOn() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CameraScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ---------- HEADER ----------
-              const Text(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(24, 16, 24, 16),
+              child: Text(
                 'Wishlist',
                 style: TextStyle(
                   fontSize: 28,
@@ -26,336 +94,156 @@ class WishlistScreen extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              // ---------- RECENTLY VIEWED ----------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recently viewed',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RecentlyViewedScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppColors.primaryGradient,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.purple.withOpacity(0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.arrow_forward,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Recently Viewed Products
-              SizedBox(
-                height: 75,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 6,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, index) {
-                    return Container(
-                      width: 75,
-                      height: 75,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[200],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/products/product_${index + 1}.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.checkroom,
-                              color: Colors.grey[400],
-                              size: 32,
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 48),
-
-              // ---------- EMPTY STATE HEART ----------
-              Center(
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Decorative lines around heart
-                      ...List.generate(8, (index) {
-                        final angle = (index * 45) * 3.14159 / 180;
-                        final distance = 45.0;
-                        return Positioned(
-                          left: 70 + (distance * math.cos(angle)) - 2,
-                          top: 70 + (distance * math.sin(angle)) - 8,
-                          child: Container(
-                            width: 4,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Colors.pink[300],
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        );
-                      }),
-                      // Heart icon
-                      const Icon(Icons.favorite, size: 52, color: Colors.pink),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 56),
-
-              // ---------- MOST POPULAR HEADER ----------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Most Popular',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to all popular
-                    },
-                    child: Row(
-                      children: [
-                        Text(
-                          'See All',
-                          style: TextStyle(
-                            color: AppColors.purple,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppColors.primaryGradient,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.purple.withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // ---------- PRODUCT CARDS ----------
-              SizedBox(
-                height: 240,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
-                  itemBuilder: (_, index) {
-                    final products = [
-                      {
-                        'image': 'product_1.png',
-                        'likes': '1780',
-                        'tag': 'New',
-                        'color': Colors.pink[50],
-                      },
-                      {
-                        'image': 'product_2.png',
-                        'likes': '1780',
-                        'tag': 'Sale',
-                        'color': Colors.yellow[50],
-                      },
-                      {
-                        'image': 'product_3.png',
-                        'likes': '1780',
-                        'tag': 'Hot',
-                        'color': Colors.grey[100],
-                      },
-                      {
-                        'image': 'product_4.png',
-                        'likes': '1780',
-                        'tag': 'New',
-                        'color': Colors.red[50],
-                      },
-                      {
-                        'image': 'product_5.png',
-                        'likes': '1780',
-                        'tag': 'Sale',
-                        'color': Colors.blue[50],
-                      },
-                    ];
-
-                    final product = products[index];
-
-                    return _productCard(
-                      image: product['image'] as String,
-                      likes: product['likes'] as String,
-                      tag: product['tag'] as String,
-                      bgColor: product['color'] as Color?,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+            Expanded(child: _buildBody()),
+          ],
         ),
       ),
     );
   }
 
-  static Widget _productCard({
-    required String image,
-    required String likes,
-    required String tag,
-    Color? bgColor,
-  }) {
-    return Container(
-      width: 160,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadWishlist,
+                style: ElevatedButton.styleFrom(backgroundColor: _purple),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_items.isEmpty) {
+      return _buildEmptyState();
+    }
+    return RefreshIndicator(
+      onRefresh: _loadWishlist,
+      color: _purple,
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: _items.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.62,
+        ),
+        itemBuilder: (_, index) => _buildCard(_items[index]),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          const Text(
+            'Your wishlist is empty',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the heart on any garment to save it here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCard(Map<String, dynamic> garment) {
+    final id = garment['id']?.toString() ?? '';
+    final name = garment['name']?.toString() ?? 'Unnamed';
+    final price = garment['price']?.toString() ?? '';
+    final brand = garment['brand_name']?.toString() ?? '';
+    final imageUrl = garment['image_url']?.toString() ?? '';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product Image
           Expanded(
             child: Stack(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: bgColor ?? Colors.grey[100],
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    child: Image.asset(
-                      'assets/images/products/$image',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Icon(
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.grey[100],
+                    child: imageUrl.isEmpty
+                        ? const Icon(
                             Icons.checkroom,
-                            color: Colors.grey[400],
                             size: 48,
+                            color: Colors.grey,
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stack) => const Icon(
+                              Icons.broken_image,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
-                // Tag Badge
                 Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      tag,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _removeItem(id),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 18,
+                        color: _purple,
                       ),
                     ),
                   ),
@@ -363,22 +251,62 @@ class WishlistScreen extends StatelessWidget {
               ],
             ),
           ),
-          // Likes Section
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (brand.isNotEmpty)
+                  Text(
+                    brand,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 Text(
-                  likes,
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.favorite, size: 18, color: Colors.blue),
+                const SizedBox(height: 2),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    color: _purple,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            child: SizedBox(
+              width: double.infinity,
+              height: 34,
+              child: ElevatedButton(
+                onPressed: _onTryOn,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _purple,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Try On',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
             ),
           ),
         ],
