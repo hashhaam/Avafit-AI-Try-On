@@ -17,76 +17,102 @@ class TryOnService {
     required File personImage,
     required String garmentId,
   }) async {
+    // Warm up backend first
     try {
-      print('🎨 Starting virtual try-on...');
-      print('   Person image: ${personImage.path}');
-      print('   Garment ID: $garmentId');
-
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConfig.baseUrl}/tryon'),
-      );
-
-      // Add person image
-      var multipartFile = await http.MultipartFile.fromPath(
-        'person_image',
-        personImage.path,
-        contentType: MediaType('image', 'jpeg'),
-      );
-      request.files.add(multipartFile);
-
-      // Add garment ID
-      request.fields['garment_id'] = garmentId;
-
-      print('🔄 Sending request to backend...');
-      print('   This may take 1-2 minutes...');
-
-      // Send request with 180 second timeout
-      var streamedResponse = await request.send().timeout(
-        const Duration(seconds: 180),
-        onTimeout: () {
-          throw Exception('Request timed out. Please try again.');
-        },
-      );
-
-      var response = await http.Response.fromStream(streamedResponse);
-
-      print('📥 Response received: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final resultUrl = data['result_url'] as String?;
-
-        if (resultUrl != null) {
-          print('✅ Try-on successful!');
-          print('   Result URL: $resultUrl');
-          return resultUrl;
-        } else {
-          throw Exception('No result URL in response');
-        }
-      } else {
-        print('❌ Try-on failed: ${response.statusCode}');
-        print('   Response: ${response.body}');
-
-        // Try to parse error message
-        try {
-          final errorData = json.decode(response.body);
-          final errorMessage = errorData['detail'] ?? 'Unknown error';
-          throw Exception(errorMessage);
-        } catch (_) {
-          throw Exception('Try-on failed: ${response.statusCode}');
-        }
-      }
-    } on TimeoutException {
-      print('⏱️  Request timed out');
-      throw Exception(
-        'Request timed out. The AI is taking longer than expected. Please try again.',
-      );
+      print('🔥 Warming up backend...');
+      await http
+          .get(Uri.parse('${ApiConfig.baseUrl}/garments'))
+          .timeout(const Duration(seconds: 60));
+      print('✅ Backend warmed up');
     } catch (e) {
-      print('❌ Error in performTryOn: $e');
-      rethrow;
+      print('⚠️  Warm-up failed (continuing anyway): $e');
     }
+
+    // Try up to 2 times (initial + 1 retry)
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      try {
+        print('🎨 Starting virtual try-on (attempt $attempt/2)...');
+        print('   Person image: ${personImage.path}');
+        print('   Garment ID: $garmentId');
+
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse('${ApiConfig.baseUrl}/tryon'),
+        );
+
+        var multipartFile = await http.MultipartFile.fromPath(
+          'person_image',
+          personImage.path,
+          contentType: MediaType('image', 'jpeg'),
+        );
+        request.files.add(multipartFile);
+
+        request.fields['garment_id'] = garmentId;
+
+        print('🔄 Sending request to backend...');
+        print('   This may take 2-4 minutes on first try-on...');
+
+        var streamedResponse = await request.send().timeout(
+          const Duration(seconds: 300),
+          onTimeout: () {
+            throw TimeoutException('Request timed out');
+          },
+        );
+
+        var response = await http.Response.fromStream(streamedResponse);
+
+        print('📥 Response received: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final resultUrl = data['result_url'] as String?;
+
+          if (resultUrl != null) {
+            print('✅ Try-on successful!');
+            print('   Result URL: $resultUrl');
+            return resultUrl;
+          } else {
+            throw Exception('No result URL in response');
+          }
+        } else {
+          print('❌ Try-on failed: ${response.statusCode}');
+          print('   Response: ${response.body}');
+
+          try {
+            final errorData = json.decode(response.body);
+            final errorMessage = errorData['detail'] ?? 'Unknown error';
+            throw Exception(errorMessage);
+          } catch (_) {
+            throw Exception('Try-on failed: ${response.statusCode}');
+          }
+        }
+      } on SocketException catch (e) {
+        print('🔌 Network error on attempt $attempt: $e');
+        if (attempt == 1) {
+          print('⏳ Waiting 5 seconds before retry...');
+          await Future.delayed(const Duration(seconds: 5));
+          continue;
+        }
+        throw Exception(
+          'Network connection failed. Please check your internet and try again.',
+        );
+      } on TimeoutException {
+        print('⏱️  Request timed out on attempt $attempt');
+        if (attempt == 1) {
+          print('⏳ Retrying...');
+          await Future.delayed(const Duration(seconds: 5));
+          continue;
+        }
+        throw Exception(
+          'AI is taking too long. The free server may be busy. Please try again in a few minutes.',
+        );
+      } catch (e) {
+        print('❌ Error in performTryOn: $e');
+        rethrow;
+      }
+    }
+
+    return null;
   }
 
   /// Get list of available garments organized by brands

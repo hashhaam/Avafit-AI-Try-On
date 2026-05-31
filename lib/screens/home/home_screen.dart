@@ -5,7 +5,7 @@ import '../../routes/app_routes.dart';
 import '../../data/brands.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
-import '../common/webview_screen.dart';
+import '../brand/brand_catalog_screen.dart';
 import '../search/search_screen.dart';
 import '../camera/camera_screen.dart';
 
@@ -214,8 +214,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  WebViewScreen(title: brand.name, url: brand.websiteUrl),
+              builder: (_) => BrandCatalogScreen(
+                brandId: brand.id,
+                brandName: brand.name,
+                tagline: brand.tagline,
+              ),
             ),
           ),
           child: Container(
@@ -228,7 +231,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Image.asset(brand.imagePath),
+                    child: Image.asset(
+                      brand.imagePath,
+                      errorBuilder: (context, error, stack) => const Icon(
+                        Icons.storefront,
+                        size: 48,
+                        color: Color(0xFF7C6FCD),
+                      ),
+                    ),
                   ),
                 ),
                 Padding(
