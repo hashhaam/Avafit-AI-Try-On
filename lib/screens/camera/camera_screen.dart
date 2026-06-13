@@ -4,7 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import '../tryon/tryon_screen.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  final Map<String, dynamic>? preselectedGarment;
+
+  const CameraScreen({super.key, this.preselectedGarment});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -30,7 +32,10 @@ class _CameraScreenState extends State<CameraScreen> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TryOnScreen(personImage: imageFile),
+            builder: (_) => TryOnScreen(
+              personImage: imageFile,
+              preselectedGarment: widget.preselectedGarment,
+            ),
           ),
         );
       }

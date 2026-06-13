@@ -7,8 +7,13 @@ import 'tryon_result_screen.dart';
 
 class TryOnScreen extends StatefulWidget {
   final File personImage;
+  final Map<String, dynamic>? preselectedGarment;
 
-  const TryOnScreen({super.key, required this.personImage});
+  const TryOnScreen({
+    super.key,
+    required this.personImage,
+    this.preselectedGarment,
+  });
 
   @override
   State<TryOnScreen> createState() => _TryOnScreenState();
@@ -19,6 +24,13 @@ class _TryOnScreenState extends State<TryOnScreen> {
   String? _selectedGarmentId;
   bool _isLoadingGarments = true;
   bool _isProcessing = false;
+  final ScrollController _garmentScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _garmentScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -38,10 +50,44 @@ class _TryOnScreenState extends State<TryOnScreen> {
       final garments = await TryOnService.getAllGarmentsFlat();
 
       print('✅ Loaded ${garments.length} garments');
+
+      // Apply pre-selected garment if provided
+      String? preId;
+      int preIndex = -1;
+      final preGarment = widget.preselectedGarment;
+      if (preGarment != null) {
+        final pid = preGarment['id']?.toString();
+        if (pid != null && pid.isNotEmpty) {
+          for (int i = 0; i < garments.length; i++) {
+            if (garments[i]['id']?.toString() == pid) {
+              preId = pid;
+              preIndex = i;
+              break;
+            }
+          }
+        }
+      }
+
       setState(() {
         _garments = garments;
+        _selectedGarmentId = preId;
         _isLoadingGarments = false;
       });
+
+      // Scroll the horizontal list to the pre-selected garment
+      if (preIndex >= 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_garmentScrollController.hasClients) {
+            // each card is 200 wide + 16 right margin
+            final offset = preIndex * 216.0;
+            _garmentScrollController.animateTo(
+              offset,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
+        });
+      }
     } catch (e) {
       print('❌ Garments error: $e');
 
@@ -227,6 +273,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
         ),
         Expanded(
           child: ListView.builder(
+            controller: _garmentScrollController,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _garments.length,

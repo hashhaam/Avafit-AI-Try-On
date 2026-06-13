@@ -112,11 +112,14 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
     });
   }
 
-  void _onTryOn() {
-    // Existing working flow: pick a photo, then select garment on TryOnScreen.
+  void _onTryOn(Map<String, dynamic> garment) {
+    // Carry the selected garment through to the try-on flow.
+    final data = Map<String, dynamic>.from(garment);
+    data['brand_id'] = widget.brandId;
+    data['brand_name'] = widget.brandName;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CameraScreen()),
+      MaterialPageRoute(builder: (_) => CameraScreen(preselectedGarment: data)),
     );
   }
 
@@ -393,7 +396,7 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
               width: double.infinity,
               height: 34,
               child: ElevatedButton(
-                onPressed: _onTryOn,
+                onPressed: () => _onTryOn(garment),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _purple,
                   padding: EdgeInsets.zero,

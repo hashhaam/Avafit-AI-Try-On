@@ -68,10 +68,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
     }
   }
 
-  void _onTryOn() {
+  void _onTryOn(Map<String, dynamic> garment) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CameraScreen()),
+      MaterialPageRoute(
+        builder: (_) => CameraScreen(preselectedGarment: garment),
+      ),
     );
   }
 
@@ -294,7 +296,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
               width: double.infinity,
               height: 34,
               child: ElevatedButton(
-                onPressed: _onTryOn,
+                onPressed: () => _onTryOn(garment),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _purple,
                   padding: EdgeInsets.zero,
