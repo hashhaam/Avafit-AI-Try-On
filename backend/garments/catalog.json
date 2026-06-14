@@ -39,6 +39,17 @@
           "category": "Bottoms",
           "price": "PKR 3,890",
           "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779048119/breakout_pent_001_w9owsg.png"
+        },
+        {
+          "id": "breakout_hoodie_006",
+          "name": "Rastah Embroidered Hoodie",
+          "category": "Hoodies",
+          "price": "PKR 9,999",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781435597/breakout_hoodie_front_006_qhvfyh.jpg",
+          "images": [
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781435597/breakout_hoodie_front_006_qhvfyh.jpg",
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781435585/breakout_hoodie_back_006_cjjggo.jpg"
+          ]
         }
       ]
     },

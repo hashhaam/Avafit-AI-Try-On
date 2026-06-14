@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/tryon_service.dart';
 import '../../services/firestore_service.dart';
 import '../camera/camera_screen.dart';
+import 'garment_detail_screen.dart';
 
 class BrandCatalogScreen extends StatefulWidget {
   final String brandId;
@@ -120,6 +121,16 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => CameraScreen(preselectedGarment: data)),
+    );
+  }
+
+  void _openDetail(Map<String, dynamic> garment) {
+    final data = Map<String, dynamic>.from(garment);
+    data['brand_id'] = widget.brandId;
+    data['brand_name'] = widget.brandName;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => GarmentDetailScreen(garment: data)),
     );
   }
 
@@ -296,122 +307,126 @@ class _BrandCatalogScreenState extends State<BrandCatalogScreen> {
     final price = garment['price']?.toString() ?? '';
     final imageUrl = garment['image_url']?.toString() ?? '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.grey[100],
-                    child: imageUrl.isEmpty
-                        ? const Icon(
-                            Icons.checkroom,
-                            size: 48,
-                            color: Colors.grey,
-                          )
-                        : Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stack) => const Icon(
-                              Icons.broken_image,
+    return GestureDetector(
+      onTap: () => _openDetail(garment),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.grey[100],
+                      child: imageUrl.isEmpty
+                          ? const Icon(
+                              Icons.checkroom,
                               size: 48,
                               color: Colors.grey,
+                            )
+                          : Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stack) =>
+                                  const Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
                             ),
-                          ),
+                    ),
                   ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () => _onFavorite(garment),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _wishlistIds.contains(garment['id']?.toString())
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        size: 18,
-                        color: _purple,
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _onFavorite(garment),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _wishlistIds.contains(garment['id']?.toString())
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 18,
+                          color: _purple,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  price,
-                  style: const TextStyle(
-                    color: _purple,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                  const SizedBox(height: 2),
+                  Text(
+                    price,
+                    style: const TextStyle(
+                      color: _purple,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            child: SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: ElevatedButton(
-                onPressed: () => _onTryOn(garment),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _purple,
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: ElevatedButton(
+                  onPressed: () => _onTryOn(garment),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _purple,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Try On',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+                  child: const Text(
+                    'Try On',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
