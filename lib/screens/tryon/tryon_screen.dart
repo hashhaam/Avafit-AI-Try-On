@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../utils/colors.dart';
 import '../../services/tryon_service.dart';
 import 'tryon_result_screen.dart';
+import 'tryon_progress_view.dart';
 
 class TryOnScreen extends StatefulWidget {
   final File personImage;
@@ -427,33 +428,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
   Widget _buildLoadingOverlay() {
     return Container(
       color: Colors.black.withValues(alpha: 0.7),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.purple),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'AI is dressing you up... ✨',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '(1-2 mins)',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: const Center(child: TryOnProgressView()),
     );
   }
 }

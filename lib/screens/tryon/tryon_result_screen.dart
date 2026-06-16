@@ -20,60 +20,9 @@ class TryOnResultScreen extends StatefulWidget {
 }
 
 class _TryOnResultScreenState extends State<TryOnResultScreen> {
-  bool _isSaving = false;
   bool _isSharing = false;
   bool _isSavingLook = false;
   bool _lookSaved = false;
-
-  Future<void> _saveToGallery() async {
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      // Download image
-      final response = await http.get(Uri.parse(widget.resultUrl));
-
-      if (response.statusCode == 200) {
-        // Get temporary directory
-        final tempDir = await getTemporaryDirectory();
-        final file = File(
-          '${tempDir.path}/avafit_tryon_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        );
-
-        // Write image to file
-        await file.writeAsBytes(response.bodyBytes);
-
-        // Note: Actual gallery saving requires platform-specific implementation
-        // For now, we'll show success message
-        // You can use packages like image_gallery_saver for actual implementation
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image saved successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        throw Exception('Failed to download image');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isSaving = false;
-      });
-    }
-  }
 
   Future<void> _shareImage() async {
     setState(() {
@@ -276,64 +225,32 @@ class _TryOnResultScreenState extends State<TryOnResultScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      // Save Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _isSaving ? null : _saveToGallery,
-                          icon: _isSaving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.download),
-                          label: const Text('Save to Gallery'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSharing ? null : _shareImage,
+                      icon: _isSharing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.share),
+                      label: const Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Share Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _isSharing ? null : _shareImage,
-                          icon: _isSharing
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.share),
-                          label: const Text('Share'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
