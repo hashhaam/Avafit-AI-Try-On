@@ -124,7 +124,8 @@ async def get_brand(brand_id: str) -> Dict[str, Any]:
 @app.post("/tryon")
 async def virtual_tryon(
     person_image: UploadFile = File(..., description="User's photo for try-on"),
-    garment_id: str = Form(..., description="Garment ID from catalog")
+    garment_id: str = Form(..., description="Garment ID from catalog"),
+    side: str = Form("front", description="Which garment side to try on: front or back")
 ) -> Dict[str, str]:
     """
     Virtual try-on endpoint
@@ -154,8 +155,18 @@ async def virtual_tryon(
         with open(person_img_path, "wb") as buffer:
             shutil.copyfileobj(person_image.file, buffer)
         
-        # Step 3: Get garment image URL
+        # Step 3: Get garment image URL (front by default; back only if explicitly
+        # requested AND a back image exists in the images array — otherwise falls
+        # back to the front image_url, so existing behavior is never affected).
         garment_image_url = garment.get("image_url")
+        normalized_side = (side or "front").strip().lower()
+        if normalized_side == "back":
+            images = garment.get("images")
+            if isinstance(images, list) and len(images) > 1 and images[1]:
+                garment_image_url = images[1]
+                print(f"🔄 Using BACK garment image: {garment_image_url}")
+            else:
+                print("ℹ️  Back requested but no back image found — using front image_url")
         if not garment_image_url:
             raise HTTPException(status_code=400, detail="Garment image_url not specified in catalog")
         
