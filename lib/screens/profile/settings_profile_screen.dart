@@ -19,6 +19,10 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+  String? _selectedGender;
   final ImagePicker _picker = ImagePicker();
 
   UserModel? _currentUser;
@@ -36,6 +40,9 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -51,6 +58,14 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
             _currentUser = userData;
             _nameController.text = userData.name;
             _phoneController.text = userData.phone ?? '';
+            _ageController.text = userData.age?.toString() ?? '';
+            _heightController.text = userData.height != null
+                ? userData.height!.toStringAsFixed(0)
+                : '';
+            _weightController.text = userData.weight != null
+                ? userData.weight!.toStringAsFixed(0)
+                : '';
+            _selectedGender = userData.gender;
             _isLoading = false;
           });
         }
@@ -92,6 +107,48 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
     }
     if (!RegExp(r'^[0-9+\s\-()]+$').hasMatch(value)) {
       return 'Invalid phone number format';
+    }
+    return null;
+  }
+
+  String? _validateAge(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Optional
+    }
+    final age = int.tryParse(value.trim());
+    if (age == null) {
+      return 'Enter a valid age';
+    }
+    if (age < 13 || age > 100) {
+      return 'Age must be between 13 and 100';
+    }
+    return null;
+  }
+
+  String? _validateHeight(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Optional
+    }
+    final height = double.tryParse(value.trim());
+    if (height == null) {
+      return 'Enter a valid height';
+    }
+    if (height < 100 || height > 220) {
+      return 'Height must be 100-220 cm';
+    }
+    return null;
+  }
+
+  String? _validateWeight(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Optional
+    }
+    final weight = double.tryParse(value.trim());
+    if (weight == null) {
+      return 'Enter a valid weight';
+    }
+    if (weight < 30 || weight > 200) {
+      return 'Weight must be 30-200 kg';
     }
     return null;
   }
@@ -296,6 +353,32 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
             : _phoneController.text.trim();
       }
 
+      // Check if age changed
+      final ageText = _ageController.text.trim();
+      final newAge = ageText.isEmpty ? null : int.tryParse(ageText);
+      if (newAge != _currentUser!.age) {
+        updateData['age'] = newAge;
+      }
+
+      // Check if gender changed
+      if (_selectedGender != _currentUser!.gender) {
+        updateData['gender'] = _selectedGender;
+      }
+
+      // Check if height changed
+      final heightText = _heightController.text.trim();
+      final newHeight = heightText.isEmpty ? null : double.tryParse(heightText);
+      if (newHeight != _currentUser!.height) {
+        updateData['height'] = newHeight;
+      }
+
+      // Check if weight changed
+      final weightText = _weightController.text.trim();
+      final newWeight = weightText.isEmpty ? null : double.tryParse(weightText);
+      if (newWeight != _currentUser!.weight) {
+        updateData['weight'] = newWeight;
+      }
+
       // Only update if there are changes
       if (updateData.isNotEmpty) {
         await FirestoreService.updateUser(_currentUser!.uid, updateData);
@@ -454,7 +537,70 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
+
+                      // -------- PERSONAL DETAILS SECTION --------
+                      const Divider(height: 1),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Personal Details',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Helps personalize your experience. Used for future size recommendations.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.secondaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      _genderField(),
+
+                      _editableField(
+                        label: 'Age',
+                        controller: _ageController,
+                        validator: _validateAge,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                      ),
+
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _editableField(
+                              label: 'Height (cm)',
+                              controller: _heightController,
+                              validator: _validateHeight,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _editableField(
+                              label: 'Weight (kg)',
+                              controller: _weightController,
+                              validator: _validateWeight,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
 
                       // -------- SAVE BUTTON --------
                       SizedBox(
@@ -529,6 +675,53 @@ class _SettingsProfileScreenState extends State<SettingsProfileScreen> {
                 vertical: 14,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Gender dropdown field
+  Widget _genderField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Gender',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            value: _selectedGender,
+            isExpanded: true,
+            hint: const Text('Select gender'),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: AppColors.inputBackground,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Male', child: Text('Male')),
+              DropdownMenuItem(value: 'Female', child: Text('Female')),
+              DropdownMenuItem(
+                value: 'Prefer not to say',
+                child: Text('Prefer not to say'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedGender = value;
+              });
+            },
           ),
         ],
       ),

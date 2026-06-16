@@ -6,6 +6,10 @@ class UserModel {
   final String name;
   final String? phone;
   final String? photoUrl;
+  final int? age;
+  final String? gender;
+  final double? height; // in cm
+  final double? weight; // in kg
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -15,6 +19,10 @@ class UserModel {
     required this.name,
     this.phone,
     this.photoUrl,
+    this.age,
+    this.gender,
+    this.height,
+    this.weight,
     required this.createdAt,
     this.updatedAt,
   });
@@ -27,6 +35,10 @@ class UserModel {
       'name': name,
       'phone': phone,
       'photoUrl': photoUrl,
+      'age': age,
+      'gender': gender,
+      'height': height,
+      'weight': weight,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -40,6 +52,10 @@ class UserModel {
       name: map['name'] ?? '',
       phone: map['phone'],
       photoUrl: map['photoUrl'],
+      age: map['age'] != null ? (map['age'] as num).toInt() : null,
+      gender: map['gender'],
+      height: map['height'] != null ? (map['height'] as num).toDouble() : null,
+      weight: map['weight'] != null ? (map['weight'] as num).toDouble() : null,
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
@@ -62,6 +78,10 @@ class UserModel {
     String? name,
     String? phone,
     String? photoUrl,
+    int? age,
+    String? gender,
+    double? height,
+    double? weight,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -71,6 +91,10 @@ class UserModel {
       name: name ?? this.name,
       phone: phone ?? this.phone,
       photoUrl: photoUrl ?? this.photoUrl,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      height: height ?? this.height,
+      weight: weight ?? this.weight,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
