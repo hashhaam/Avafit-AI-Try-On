@@ -17,13 +17,13 @@ class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0; // Home should be default, not Camera
 
   // Pages with their own navigators
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
+  // final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+  //   GlobalKey<NavigatorState>(),
+  //   GlobalKey<NavigatorState>(),
+  //   GlobalKey<NavigatorState>(),
+  //   GlobalKey<NavigatorState>(),
+  //   GlobalKey<NavigatorState>(),
+  // ];
 
   Widget _buildScreen(int index) {
     switch (index) {
