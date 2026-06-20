@@ -16,6 +16,7 @@ class TryOnService {
   static Future<String?> performTryOn({
     required File personImage,
     required String garmentId,
+    String side = 'front',
   }) async {
     // Warm up backend first
     try {
@@ -48,6 +49,7 @@ class TryOnService {
         request.files.add(multipartFile);
 
         request.fields['garment_id'] = garmentId;
+        request.fields['side'] = side;
 
         print('🔄 Sending request to backend...');
         print('   This may take 2-4 minutes on first try-on...');

@@ -163,3 +163,5 @@ backend/garments/images/*.jpeg
 *.swo
 *~
 .fuse_hidden*
+
+AGENTS.md
