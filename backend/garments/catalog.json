@@ -134,6 +134,28 @@
           "category": "Kurta",
           "price": "PKR 5,490",
           "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1779047858/sapphire_kurta_005_rlsmgy.png"
+        },
+        {
+          "id": "sapphire_kurta_006",
+          "name": "Sage Cutwork Kurta",
+          "category": "Kurta",
+          "price": "PKR 5,990",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979341/sapphire_kurta_front_006_lb9asd.png",
+          "images": [
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979341/sapphire_kurta_front_006_lb9asd.png",
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979333/sapphire_kurta_back_006_kzd4zk.png"
+          ]
+        },
+        {
+          "id": "sapphire_kurta_007",
+          "name": "Magenta Embroidered Kurta",
+          "category": "Kurta",
+          "price": "PKR 6,490",
+          "image_url": "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979331/sapphire_kurta_front_007_fddm4g.png",
+          "images": [
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979331/sapphire_kurta_front_007_fddm4g.png",
+            "https://res.cloudinary.com/dgoj2e07l/image/upload/v1781979332/sapphire_kurta_back_007_oixaqh.png"
+          ]
         }
       ]
     },
